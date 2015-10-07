@@ -23,12 +23,16 @@ Created on Apr 21, 2011
 
 @author: tmetsch
 """
-
-from Tkinter import Tk, IntVar, StringVar
-import Tkinter
-import ttk
-import json,os
-
+try:
+    #python 2
+    from Tkinter import Tk, IntVar, StringVar
+    import Tkinter as tk
+    import json
+except:
+    #python 3
+    from tkinter import Tk, IntVar, StringVar
+    import tkinter as tk
+    import json
 
 def _contains_dict(items):
     """
@@ -67,7 +71,7 @@ class TkJson(Tk):
     menu = None
     widgets = {}
 
-    def __init__(self, filename, title='Tk', preferTk=True):
+    def __init__(self, filename, title='Tk'):
         """
         Initialize a Tk root and created the UI from a JSON file.
 
@@ -76,10 +80,11 @@ class TkJson(Tk):
         # Needs to be done this way - because base class do not derive from
         # object :-(
         Tk.__init__(self)
-        self.preferTk=preferTk
+
         self.title(title)
-        
-        user_interface = json.load(open(filename)) if os.path.isfile(filename) else json.loads(filename)
+
+        ui_file = open(filename)
+        user_interface = json.load(ui_file)
 
         self.create_widgets(self, user_interface)
 
@@ -96,12 +101,10 @@ class TkJson(Tk):
 
             elif isinstance(current, dict) and _contains_list(current):
                 widget = self._create_widget(name, parent, current)
-                if not widget: break
 
                 self.create_widgets(widget, current)
             elif isinstance(current, dict) and _contains_dict(current):
                 widget = self._create_widget(name, parent, current)
-                if not widget: break
 
                 self.create_widgets(widget, current)
             elif isinstance(current, list):
@@ -121,26 +124,21 @@ class TkJson(Tk):
         position, weight, padding, opt = self._get_options(desc)
 
         try:
-            widget_factory = getattr(Tkinter, name) if self.preferTk else getattr(ttk, name)
+            widget_factory = getattr(tk, name)
         except AttributeError:
-            import traceback
-            traceback.print_exc()
             try:
-                widget_factory = getattr(ttk, name) if self.preferTk else getattr(Tkinter, name)
-            except AttributeError as e:
-                import traceback
-                traceback.print_exc()
-                raise AttributeError('Neither Tkinter nor ttk have a widget named: ', name)
+                #python 2
+                try:
+                    import ttk
+                except: #pyton 3
+                    from tkinter import ttk
 
-        while True:
-         try:
-          widget = widget_factory(parent, **opt)
-          break
-         except Exception as e:
-          print e
-          if len(opt)==0: break
-          del opt[str(e).split()[2][2:-1]]
-          # widget = widget_factory(parent,**opt)
+                widget_factory = getattr(ttk, name)
+            except AttributeError:
+                raise AttributeError('Neither Tkinter nor ttk have a' +
+                                     ' widget named: ', name)
+
+        widget = widget_factory(parent, **opt)
 
         widget.grid(row=position[0],
                     column=position[1],
@@ -264,7 +262,6 @@ class TkJson(Tk):
         return var
 
     def entry(self, name, key=None, cmd=None, focus=False):
-
         """
         Returns the text of a TK widget.
 
@@ -304,7 +301,7 @@ class TkJson(Tk):
         if name in self.widgets.keys():
             return self.widgets[name]
         else:
-            raise KeyError('Widget with the name ` ' + name + ' ` not found.')
+            raise KeyError('Widget with the name ' + name + ' not found.')
 
     def xscroll(self, widget_name, scrollbar_name):
         """
@@ -344,7 +341,7 @@ class TkJson(Tk):
         """
         if self.menu is None and popup is False:
             # If no menu exists create one and add it to the Tk root.
-            self.menu = Tkinter.Menu(self, tearoff=0)
+            self.menu = tk.Menu(self, tearoff=0)
             self.config(menu=self.menu)
 
         if name is None and parent is None and popup is False and len(commands.keys()) > 0:
@@ -355,11 +352,11 @@ class TkJson(Tk):
         elif name is not None and popup is False and len(commands.keys()) > 0:
             if parent is None:
                 # Create a top-level drop down menu.
-                tmp_menu = Tkinter.Menu(self.menu, tearoff=0)
+                tmp_menu = tk.Menu(self.menu, tearoff=0)
                 self.menu.add_cascade(label=name, menu=tmp_menu)
             else:
                 # Create a submenu.
-                tmp_menu = Tkinter.Menu(parent, tearoff=0)
+                tmp_menu = tk.Menu(parent, tearoff=0)
                 parent.add_cascade(label=name, menu=tmp_menu)
 
             for key in commands:
@@ -367,7 +364,7 @@ class TkJson(Tk):
 
             return tmp_menu
         elif popup is True and len(commands.keys()) > 0:
-            tmp_menu = Tkinter.Menu(self, tearoff=0)
+            tmp_menu = tk.Menu(self, tearoff=0)
             for key in commands:
                 tmp_menu.add_command(label=key, command=commands[key])
 
@@ -396,7 +393,7 @@ class TkJson(Tk):
         filename -- The file which describes the content of the tab.
         name -- The name of the tab.
         """
-        frame = Tkinter.Frame()
+        frame = tk.Frame()
         self.create_from_file(frame, filename)
         parent.add(frame, text=name)
 
@@ -407,7 +404,7 @@ class TkJson(Tk):
         parent -- The parent notebook widget instance.
         title -- The title for the dialog.
         """
-        dialog = Tkinter.Toplevel()
+        dialog = tk.Toplevel()
         dialog.title(title)
         self.create_from_file(dialog, filename)
         dialog.grid()

@@ -24,8 +24,8 @@ if __name__ == '__main__':
     root = tkgen.gengui.TkJson('example.json', title='Some test gui...')
 
     def ok(event=None):
-        print v.get()
-        print c.get()
+        print(v.get())
+        print(c.get())
         root.destroy()
 
     # config vars for checkboxes etc.
