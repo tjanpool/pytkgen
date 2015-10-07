@@ -22,7 +22,7 @@
 try:
     #python2
     from Tkconstants import END
-except:
+except ImportError:
     #python3
     from tkinter import END
 

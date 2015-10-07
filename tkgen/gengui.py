@@ -28,7 +28,7 @@ try:
     from Tkinter import Tk, IntVar, StringVar
     import Tkinter as tk
     import json
-except:
+except ImportError:
     #python 3
     from tkinter import Tk, IntVar, StringVar
     import tkinter as tk
@@ -130,7 +130,7 @@ class TkJson(Tk):
                 #python 2
                 try:
                     import ttk
-                except: #pyton 3
+                except ImportError: #pyton 3
                     from tkinter import ttk
 
                 widget_factory = getattr(ttk, name)
