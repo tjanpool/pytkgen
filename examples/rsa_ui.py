@@ -124,6 +124,8 @@ if __name__ == '__main__':
         d_entry.delete(0, END)
         d_entry.insert(END, original)
         d_entry.config(state='disabled')
+
+    p_v = root.entry('p', focus=True)
     q_v = root.entry('q')
     m_v = root.entry('msg', key='<Return>', cmd=ok)
 

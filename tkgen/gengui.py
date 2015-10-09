@@ -27,12 +27,14 @@ try:
     #python 2
     from Tkinter import Tk, IntVar, StringVar
     import Tkinter as tk
-    import json
+    import ttk
+    import json, os
 except ImportError:
     #python 3
     from tkinter import Tk, IntVar, StringVar
     import tkinter as tk
-    import json
+    from tkinter import ttk
+    import json, os
 
 def _contains_dict(items):
     """
@@ -71,7 +73,7 @@ class TkJson(Tk):
     menu = None
     widgets = {}
 
-    def __init__(self, filename, title='Tk'):
+    def __init__(self, filename, title='Tk', preferTk=True):
         """
         Initialize a Tk root and created the UI from a JSON file.
 
@@ -80,11 +82,11 @@ class TkJson(Tk):
         # Needs to be done this way - because base class do not derive from
         # object :-(
         Tk.__init__(self)
+        self.preferTk=preferTk
 
         self.title(title)
 
-        ui_file = open(filename)
-        user_interface = json.load(ui_file)
+        user_interface = json.load(open(filename)) if os.path.isfile(filename) else json.loads(filename)
 
         self.create_widgets(self, user_interface)
 
@@ -101,10 +103,12 @@ class TkJson(Tk):
 
             elif isinstance(current, dict) and _contains_list(current):
                 widget = self._create_widget(name, parent, current)
+                if not widget: break
 
                 self.create_widgets(widget, current)
             elif isinstance(current, dict) and _contains_dict(current):
                 widget = self._create_widget(name, parent, current)
+                if not widget: break
 
                 self.create_widgets(widget, current)
             elif isinstance(current, list):
@@ -123,22 +127,26 @@ class TkJson(Tk):
         """
         position, weight, padding, opt = self._get_options(desc)
 
+
         try:
-            widget_factory = getattr(tk, name)
+            widget_factory = getattr(tk, name) if self.preferTk else getattr(ttk, name)
         except AttributeError:
+             print("However tkinter was preferred, tkinter does not have a widget named: `"+ name+"`. Will look for this widget into the ttk library.")
+             try:
+                 widget_factory = getattr(ttk, name) if self.preferTk else getattr(tk, name)
+             except AttributeError as e:
+                 import traceback
+                 traceback.print_exc()
+                 raise AttributeError('Neither Tkinter nor ttk have a widget named: ', name)
+
+        while True:
             try:
-                #python 2
-                try:
-                    import ttk
-                except ImportError: #pyton 3
-                    from tkinter import ttk
-
-                widget_factory = getattr(ttk, name)
-            except AttributeError:
-                raise AttributeError('Neither Tkinter nor ttk have a' +
-                                     ' widget named: ', name)
-
-        widget = widget_factory(parent, **opt)
+                widget = widget_factory(parent, **opt)
+                break
+            except Exception as e:
+                print(e)
+                if len(opt)==0: break
+                del opt[str(e).split()[2][2:-1]]
 
         widget.grid(row=position[0],
                     column=position[1],
@@ -301,7 +309,7 @@ class TkJson(Tk):
         if name in self.widgets.keys():
             return self.widgets[name]
         else:
-            raise KeyError('Widget with the name ' + name + ' not found.')
+            raise KeyError('Widget with the name `' + name + '` not found.')
 
     def xscroll(self, widget_name, scrollbar_name):
         """
